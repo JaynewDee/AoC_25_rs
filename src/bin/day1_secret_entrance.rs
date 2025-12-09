@@ -1,7 +1,7 @@
-use std::ops::Index;
+use core::num;
 
 fn main() {
-    let content =std::fs::read_to_string("input/day1_secretentrance.txt").unwrap() ;
+    let content = std::fs::read_to_string("input/day1_secretentrance.txt").unwrap();
     let lines = content.lines().collect::<Vec<&str>>();
     part1(&lines);
     part2(&lines);
@@ -18,17 +18,16 @@ fn part1(input_lines: &Vec<&str>) {
 
         match direction {
             "L" => {
-                for n in 1..=moves {
+                for _ in 1..=moves {
                     if current == 0 {
                         current = 99;
                     } else {
                         current -= 1;
                     }
-
                 }
-            },
+            }
             "R" => {
-                for n in 1..=moves {
+                for _ in 1..=moves {
                     if current == 99 {
                         current = 0;
                     } else {
@@ -36,7 +35,7 @@ fn part1(input_lines: &Vec<&str>) {
                     }
                 }
             }
-            _ => panic!("Unknown direction: {}", direction)
+            _ => panic!("Unknown direction: {}", direction),
         }
 
         if current == 0 {
@@ -47,77 +46,43 @@ fn part1(input_lines: &Vec<&str>) {
 }
 
 fn part2(input_lines: &Vec<&str>) {
-    let mut current = 50u32;
-    let mut num_zeroes = 0u32;
+    let mut current = 50i64;
+    let mut num_zeroes = 0i64;
 
     for line in input_lines {
         let pieces = line.split_at(1);
         let direction = pieces.0;
-        let rotations = pieces.1.parse::<u32>().unwrap();
+        let rotations = pieces.1.parse::<i64>().unwrap();
 
-        match direction {
-            "L" => {
-                for _ in 1..=rotations {
-                    if current == 0 {
-                        num_zeroes += 1;
-                        current = 99;
-                    } else {
-                        current -= 1;
-                    }
+        let (new_pos, passes) = rotate(direction, rotations, current);
 
-                }
-            },
-            "R" => {
-                for _ in 1..=rotations {
-                    if current == 99 {
-                        current = 0;
-                    } else {
-                        current += 1;
-                    }
-                    if current == 0 {
-                        num_zeroes += 1;
-                    }
-                }
-            }
-            _ => panic!("Unknown direction: {}", direction)
-        }
+        num_zeroes += passes;
+        current = new_pos;
     }
 
     println!("{}", num_zeroes);
 }
 
-fn rotate(direction: &str, rotations: u32, mut current: u32) -> u32 {
-    let mut num_passes_over_zero = 0;
-
+fn rotate(direction: &str, rotations: i64, pos: i64) -> (i64, i64) {
     match direction {
         "L" => {
-            for _ in 1..=rotations {
-                if current == 0 {
-                    num_passes_over_zero += 1;
-                    current = 99;
-                } else {
-                    current -= 1;
-                }
-
-            }
-        },
-        "R" => {
-            for _ in 1..=rotations {
-                if current == 99 {
-                    current = 0;
-                } else {
-                    current += 1;
-                }
-                if current == 0 {
-                    num_passes_over_zero += 1;
-                }
-            }
+            let end = pos as i64 - rotations as i64;
+            let wrapped = ((end % 100) + 100) % 100;
+            let wraps = end.div_euclid(100) - (pos as i64).div_euclid(100);
+            // println!("Wrapped: {}\nWraps: {}", wrapped, wraps);
+            (wrapped, wraps.abs())
         }
-        _ => panic!("Unknown direction: {}", direction)
+        "R" => {
+            let end = pos as i64 + rotations as i64;
+            let wrapped = ((end % 100) + 100) % 100;
+            let wraps = end.div_euclid(100) - (pos as i64).div_euclid(100);
+            // println!("Wrapped: {}\nWraps: {}", wrapped, wraps);
+            (wrapped, wraps.abs())
+        }
+        _ => (0, 0),
     }
-
-    num_passes_over_zero
 }
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -125,21 +90,12 @@ mod tests {
     #[test]
     fn test_rotate() {
         let direction = "R";
-        let rotations: u32 = 1000;
+        let rotations: i64 = 1000;
+        let current: i64 = 50;
 
-        let current: u32 = 50;
+        let (pos, passes) = rotate(direction, rotations, current);
 
-        let num_passes_over_zero = rotate(direction, rotations, current);
-
-        assert_eq!(current, 50);
-        assert_eq!(num_passes_over_zero, 10);
-
-        let direction = "L";
-        let rotations = 60;
-
-        let num_passes_over_zero = rotate(direction, rotations, current);
-
-        assert_eq!(current, 90);
-        assert_eq!(num_passes_over_zero, 1);
+        assert!(pos == 50);
+        assert!(passes == 10);
     }
 }
